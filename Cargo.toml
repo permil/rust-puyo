@@ -1,0 +1,7 @@
+[package]
+name = "puyo"
+version = "0.1.0"
+authors = ["permil"]
+
+[dependencies]
+piston_window = "0.67.0"
