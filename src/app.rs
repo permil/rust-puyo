@@ -5,14 +5,16 @@ use field::Field;
 
 pub struct App {
     field: Field,
-    dt: f64
+    dt: f64,
+    count: isize
 }
 
 impl App {
     pub fn new() -> App {
         App {
             field: Field::new(),
-            dt: 0.0
+            dt: 0.0,
+            count: 0
         }
     }
     pub fn render<E>(&mut self, window: &mut PistonWindow, e: &E)
@@ -37,6 +39,8 @@ impl App {
         }
     }
     pub fn update(&mut self, args: &UpdateArgs) {
+        self.count += 1;
+        println!("{}", self.count);
         self.dt += args.dt;
         if self.dt >= 1.0 / 60.0 {
             self.dt -= 1.0 / 60.0;
