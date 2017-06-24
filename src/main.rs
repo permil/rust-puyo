@@ -19,6 +19,7 @@ fn main() {
         if let Some(ref args) = e.update_args() {
            // TODO: only update if necessary
            // println!("update");
+            app.update(args);
         }
 
         if let Some(ref args) = e.press_args() {
