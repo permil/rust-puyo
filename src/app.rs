@@ -40,7 +40,6 @@ impl App {
     }
     pub fn update(&mut self, args: &UpdateArgs) {
         self.count += 1;
-        println!("{}", self.count);
         self.dt += args.dt;
         if self.dt >= 1.0 / 60.0 {
             self.dt -= 1.0 / 60.0;

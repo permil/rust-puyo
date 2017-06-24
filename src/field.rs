@@ -10,7 +10,7 @@ const CEIL: usize = 2;
 #[derive(PartialEq, Eq)]
 enum State {
     Wait,
-    Move
+    Move,
 }
 impl Default for State {
     fn default() -> State { State::Wait }
@@ -37,8 +37,8 @@ impl Field {
         rectangle([0.5, 0.5, 0.5, 1.0],
                 [32.0, 32.0, 32.0 * 6.0, 32.0 * 12.0],
                 c.transform, g);
-        for (i, row) in self.grids.iter().enumerate() {
-            for (j, grid) in row.iter().enumerate() {
+        for (i, column) in self.grids.iter().enumerate() {
+            for (j, grid) in column.iter().enumerate() {
                 if *grid != 0 {
                     ellipse(self.color(grid), // red
                             [(i * 32) as f64, ((j - CEIL) * 32) as f64, 32.0, 32.0],
@@ -86,10 +86,14 @@ impl Field {
     pub fn step(&mut self) {
         match self.state {
             State::Wait => {
-                self.x = 3;
-                self.y = CEIL;
-                self.kind = rand::thread_rng().gen_range(1, 4);
-                self.state = State::Move;
+                if !self.drop() {
+                    if !self.erase() {
+                        self.x = 3;
+                        self.y = CEIL;
+                        self.kind = rand::thread_rng().gen_range(1, 4);
+                        self.state = State::Move;
+                    }
+                }
             },
             State::Move => {
                 self.down_count += 1;
@@ -98,5 +102,65 @@ impl Field {
                 }
             }
         }
+    }
+    fn drop(&mut self) -> bool {
+        let mut dropped = false;
+        for i in 1..WIDTH+1 {
+            let mut column = self.grids[i];
+            for j in (CEIL..HEIGHT+CEIL).rev() {
+                if self.grids[i][j] != 0 && self.grids[i][j+1] == 0 {
+                    self.grids[i][j+1] = self.grids[i][j];
+                    self.grids[i][j] = 0;
+                    dropped = true;
+                }
+            }
+        }
+        dropped
+    }
+    fn erase(&mut self) -> bool {
+        let mut erased = false;
+        let mut flags = [[false; HEIGHT+CEIL+1]; WIDTH+2];
+        for i in 1..WIDTH+1 {
+            let mut column = self.grids[i];
+            for j in CEIL..HEIGHT+CEIL+1 {
+                if !flags[i][j] && self.grids[i][j] != 0 {
+                    let connected = self.connect(&self.grids, &mut flags, i, j, self.grids[i][j]);
+                    if connected.len() >= 4 {
+                        for grid in &connected {
+                            self.grids[grid.0][grid.1] = 0;
+                        }
+                        erased = true;
+                    }
+//                    print!("{} ", connected.len());
+//                    for (ii, jj) in connected {
+//                        print!("({}, {}) ", ii, jj);
+//                    }
+//                    println!("");
+                }
+            }
+        }
+        erased
+    }
+    fn connect(&self,
+               grids: &[[usize; HEIGHT+CEIL+1]; WIDTH+2],
+               flags: &mut [[bool; HEIGHT+CEIL+1]; WIDTH+2],
+               x: usize,
+               y: usize,
+               color: usize) -> Vec<(usize, usize)> {
+        let mut result = Vec::new();
+        if x <= 0 || x > WIDTH || y < CEIL || y > CEIL+HEIGHT {
+            return result;
+        }
+        if flags[x][y] || self.grids[x][y] != color {
+            return result;
+        }
+
+        flags[x][y] = true;
+        result.push((x, y));
+        result.append(&mut self.connect(grids, flags, x+1, y, color));
+        result.append(&mut self.connect(grids, flags, x, y+1, color));
+        result.append(&mut self.connect(grids, flags, x-1, y, color));
+        result.append(&mut self.connect(grids, flags, x, y-1, color));
+        return result
     }
 }
